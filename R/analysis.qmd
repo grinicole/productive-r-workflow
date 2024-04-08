@@ -1,0 +1,170 @@
+---
+title: "Palmer 🐧 Dataset Analysis"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    toc: true
+    toc-location: left
+    toc-title: " "
+    number-sections: true
+css: style.css
+editor: source
+fig-cap-location: margin
+author:
+  name: "Nicole Grinovero"
+  email: nicolegrinovero@gmail.com
+keywords: "Quarto, Data Analysis"
+date: today
+title-block-banner: "#CAE4DE"
+title-block-banner-color: "black"
+---
+
+***
+
+:::{.callout-gradient}
+:::{.callout-note collapse="true"}
+
+## The Productive R Workflow course by Yan Holtz
+
+This Quarto document showcases the skills I learned through the [Productive R Workflow](https://www.productive-r-workflow.com/) online course on efficient data analysis and report generation. 
+:::
+:::
+
+
+
+## Introduction 
+
+![](asset/hex_sticker.png){fig-alt="An image showing the palmerpenguins hex sticker" fig-align="center" width=150} 
+
+
+This document provides a straightforward analysis of the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) dataset, which contains data for 344 penguins from 3 different species, collected from 3 islands in the Palmer Archipelago, Antarctica.
+
+The libraries to be loaded for the analysis include `tidyverse`, `hrbrthemes`, `patchwork`, `DT`, `knitr`, and `plotly`.
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(hrbrthemes) # ipsum theme for ggplot2 charts
+library(patchwork) # combine charts together
+library(DT) # interactive tables
+library(knitr) # static table with the kable() function
+library(plotly) # interactive graphs
+```
+
+
+
+
+
+## Loading Data
+
+The dataset has already been loaded and cleaned in the previous step of this pipeline.
+
+Let’s load the clean version, together with a custom function available in `functions.R`.
+
+
+```{r}
+# Source functions
+source(file = "functions.R")
+
+# Read the clean dataset
+data <- readRDS(file = "../input/clean_data.rds")
+```
+
+
+
+For this penguin data, `bill_length_mm` and `bill_depth_mm` are measured as shown below:
+
+![Bill measurement explanation](asset/culmen_depth.png){width=400}
+
+In case you’re wondering how the original dataset looks like, here is an **interactive** version of it, made using the `DT` package:
+
+```{r}
+datatable(data, options = list(pageLength = 10), filter = "top")
+```
+
+
+
+
+## Bill Dimensions
+
+Let's delve into some descriptive analysis, where we'll extract **summary statistics** and create **visualizations**.
+
+Upon examination, one notable observation is the slightly **negative correlation** between `bill length` and `bill depth`:
+
+```{r, fig.align='center', fig.width=5, fig.height=5, warning=FALSE, fig.cap="*Relationship between bill length and bill depth. All data points included.*"}
+p <- data %>%
+  ggplot(
+    aes(x = bill_length_mm, y = bill_depth_mm, shape = species)
+  ) +
+  geom_point(color = "#69b3a2") +
+  labs(
+    x = "Bill Length (mm)",
+    y = "Bill Depth (mm)",
+    title = paste("Surprising relationship?")
+  ) +
+  theme_ipsum()
+
+ggplotly(p)
+```
+
+
+
+It is also interesting to note that `bill length` a and `bill depth` are quite different from one species to another. The average of a variable can be computed as follow:
+
+$${\displaystyle Avg={\frac {1}{n}}\sum _{i=1}^{n}a_{i}={\frac {a_{1}+a_{2}+\cdots +a_{n}}{n}}}$$
+
+Averages of `bill length` and `bill depth` for each species are summarized in the 2 tables below:
+
+```{r}
+#| layout-ncol: 2
+
+# Average bill length per species
+bill_length_per_species <- data %>%
+  group_by(species) %>%
+  summarize(average_bill_length = num(mean(bill_length_mm, na.rm = TRUE), digits = 2))
+
+kable(bill_length_per_species)
+
+# Average bill length for the Adelie species
+bill_length_adelie <- data %>%
+  group_by(species) %>%
+  summarise(average_bill_length = mean(bill_length_mm, na.rm = TRUE)) %>%
+  filter(species == "Adelie") %>%
+  pull(average_bill_length) %>%
+  round(2)
+
+# Average bill depth per species
+bill_depth_per_species <- data %>%
+  group_by(species) %>%
+  summarize(average_bill_depth = num(mean(bill_depth_mm, na.rm = TRUE), digits = 2))
+
+kable(bill_depth_per_species)
+```
+
+For instance, the average bill length for the species `Adelie` is `r bill_length_adelie`.
+
+To better understand how bill morphology varies, let's now examine the bill depth-to-length relationship within each `species`:
+
+```{r, warning=FALSE, fig.height=3, fig.width=9, fig.cap="There is actually a <b>positive correlation</b> when split by species."}
+# Use the function in functions.R
+p1 <- create_scatterplot(data, "Adelie", "#6689c6", 2)
+p2 <- create_scatterplot(data, "Chinstrap", "#e85252", 2)
+p3 <- create_scatterplot(data, "Gentoo", "#9a6fb0", 2)
+
+p1 + p2 + p3
+```
+
+
+
+## Conclusions
+
+This document provides a short analysis of the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) dataset. The goal was to explore the relationship between bill length and bill depth and to show how important it is to consider group effects.
+
+
+<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" >Session Information</button><div id="collapseOne" class="accordion-collapse collapse"><div>
+
+```{r}
+sessionInfo()
+```
+
+</div></div>
