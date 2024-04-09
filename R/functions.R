@@ -20,5 +20,3 @@ create_scatterplot <- function(data, selected_species, color, size) {
 
   return(plot)
 }
-
-# Test commit
